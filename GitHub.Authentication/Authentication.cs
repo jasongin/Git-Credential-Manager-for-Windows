@@ -42,12 +42,14 @@ namespace GitHub.Authentication
         /// The uniform resource indicator of the resource which requires authentication.
         /// </param>
         /// <param name="tokenScope">The desired scope of any personal access tokens acquired.</param>
+        /// <param name="tokenDescription">Description of tokens that may be generated.</param>
         /// <param name="personalAccessTokenStore">
         /// A secure secret store for any personal access tokens acquired.
         /// </param>
         public Authentication(
             TargetUri targetUri,
             TokenScope tokenScope,
+            string tokenDescription,
             ICredentialStore personalAccessTokenStore,
             AcquireCredentialsDelegate acquireCredentialsCallback,
             AcquireAuthenticationCodeDelegate acquireAuthenticationCodeCallback,
@@ -63,6 +65,7 @@ namespace GitHub.Authentication
                 throw new ArgumentNullException("acquireAuthenticationCodeCallback", "The parameter `acquireAuthenticationCodeCallback` is null or invalid.");
 
             TokenScope = tokenScope;
+            TokenDescription = tokenDescription;
 
             PersonalAccessTokenStore = personalAccessTokenStore;
             Authority = new Authority(targetUri);
@@ -76,6 +79,11 @@ namespace GitHub.Authentication
         /// The desired scope of the authentication token to be requested.
         /// </summary>
         public readonly TokenScope TokenScope;
+
+        /// <summary>
+        /// Description of the token, which appears on the PAT admin page.
+        /// </summary>
+        public readonly string TokenDescription;
 
         internal IAuthority Authority { get; set; }
         internal ICredentialStore PersonalAccessTokenStore { get; set; }
@@ -115,6 +123,7 @@ namespace GitHub.Authentication
         public static BaseAuthentication GetAuthentication(
             TargetUri targetUri,
             TokenScope tokenScope,
+            string tokenDescription,
             ICredentialStore personalAccessTokenStore,
             AcquireCredentialsDelegate acquireCredentialsCallback,
             AcquireAuthenticationCodeDelegate acquireAuthenticationCodeCallback,
@@ -130,7 +139,14 @@ namespace GitHub.Authentication
 
             if (targetUri.DnsSafeHost.EndsWith(GitHubBaseUrlHost, StringComparison.OrdinalIgnoreCase))
             {
-                authentication = new Authentication(targetUri, tokenScope, personalAccessTokenStore, acquireCredentialsCallback, acquireAuthenticationCodeCallback, authenticationResultCallback);
+                authentication = new Authentication(
+                    targetUri,
+                    tokenScope,
+                    tokenDescription,
+                    personalAccessTokenStore,
+                    acquireCredentialsCallback,
+                    acquireAuthenticationCodeCallback,
+                    authenticationResultCallback);
                 Git.Trace.WriteLine($"created GitHub authentication for '{targetUri}'.");
             }
             else
@@ -185,7 +201,7 @@ namespace GitHub.Authentication
             {
                 AuthenticationResult result;
 
-                if (result = await Authority.AcquireToken(targetUri, username, password, null, this.TokenScope))
+                if (result = await Authority.AcquireToken(targetUri, username, password, null, this.TokenScope, this.TokenDescription))
                 {
                     Git.Trace.WriteLine($"token acquisition for '{targetUri}' succeeded");
 
@@ -203,7 +219,7 @@ namespace GitHub.Authentication
                     string authenticationCode;
                     if (AcquireAuthenticationCodeCallback(targetUri, result, username, out authenticationCode))
                     {
-                        if (result = await Authority.AcquireToken(targetUri, username, password, authenticationCode, this.TokenScope))
+                        if (result = await Authority.AcquireToken(targetUri, username, password, authenticationCode, this.TokenScope, this.TokenDescription))
                         {
                             Git.Trace.WriteLine($"token acquisition for '{targetUri}' succeeded.");
 
@@ -253,7 +269,7 @@ namespace GitHub.Authentication
             Credential credentials = null;
 
             AuthenticationResult result;
-            if (result = await Authority.AcquireToken(targetUri, username, password, authenticationCode, this.TokenScope))
+            if (result = await Authority.AcquireToken(targetUri, username, password, authenticationCode, this.TokenScope, this.TokenDescription))
             {
                 Git.Trace.WriteLine($"token acquisition for '{targetUri}' succeeded.");
 

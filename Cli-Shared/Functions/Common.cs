@@ -75,10 +75,12 @@ namespace Microsoft.Alm.Cli
 
                     // detect the authority
                     authority = await BaseVstsAuthentication.GetAuthentication(operationArguments.TargetUri,
-                                                                               Program.VstsCredentialScope,
+                                                                               GetVstsTokenScope(program, operationArguments),
+                                                                               GetTokenDescription(program, operationArguments),
                                                                                secrets)
                              ?? Github.Authentication.GetAuthentication(operationArguments.TargetUri,
-                                                                        Program.GitHubCredentialScope,
+                                                                        GetGitHubTokenScope(program, operationArguments),
+                                                                        GetTokenDescription(program, operationArguments),
                                                                         secrets,
                                                                         githubCredentialCallback,
                                                                         githubAuthcodeCallback,
@@ -128,7 +130,10 @@ namespace Microsoft.Alm.Cli
                     }
 
                     // return the allocated authority or a generic AAD backed VSTS authentication object
-                    return authority ?? new VstsAadAuthentication(tenantId, Program.VstsCredentialScope, secrets);
+                    return authority ?? new VstsAadAuthentication(tenantId,
+                                                                  GetVstsTokenScope(program, operationArguments),
+                                                                  GetTokenDescription(program, operationArguments),
+                                                                  secrets);
 
                 case AuthorityType.Basic:
                     // enforce basic authentication only
@@ -140,7 +145,8 @@ namespace Microsoft.Alm.Cli
 
                     // return a GitHub authentication object
                     return authority ?? new Github.Authentication(operationArguments.TargetUri,
-                                                                  Program.GitHubCredentialScope,
+                                                                  GetGitHubTokenScope(program, operationArguments),
+                                                                  GetTokenDescription(program, operationArguments),
                                                                   secrets,
                                                                   githubCredentialCallback,
                                                                   githubAuthcodeCallback,
@@ -158,7 +164,9 @@ namespace Microsoft.Alm.Cli
                     Git.Trace.WriteLine($"authority for '{operationArguments.TargetUri}' is Microsoft Live.");
 
                     // return the allocated authority or a generic MSA backed VSTS authentication object
-                    return authority ?? new VstsMsaAuthentication(Program.VstsCredentialScope, secrets);
+                    return authority ?? new VstsMsaAuthentication(GetVstsTokenScope(program, operationArguments),
+                                                                  GetTokenDescription(program, operationArguments),
+                                                                  secrets);
 
                 case AuthorityType.Ntlm:
                     // enforce NTLM authentication only
@@ -757,6 +765,41 @@ namespace Microsoft.Alm.Cli
 
             value = null;
             return false;
+        }
+
+        private static Github.TokenScope GetGitHubTokenScope(Program program, OperationArguments operationArguments)
+        {
+            string tokenScope = null;
+            if (program.TryReadString(operationArguments, null, Program.EnvironTokenScopeKey, out tokenScope))
+            {
+                Git.Trace.WriteLine($"token scope for '{operationArguments.TargetUri}' is " + tokenScope);
+                return new Github.TokenScope(tokenScope);
+            }
+
+            return Program.GitHubCredentialScope;
+        }
+
+        private static VstsTokenScope GetVstsTokenScope(Program program, OperationArguments operationArguments)
+        {
+            string tokenScope = null;
+            if (program.TryReadString(operationArguments, null, Program.EnvironTokenScopeKey, out tokenScope))
+            {
+                Git.Trace.WriteLine($"token scope for '{operationArguments.TargetUri}' is " + tokenScope);
+                return new VstsTokenScope(tokenScope);
+            }
+
+            return Program.VstsCredentialScope;
+        }
+
+        private static string GetTokenDescription(Program program, OperationArguments operationArguments)
+        {
+            string tokenDescription = null;
+            if (program.TryReadString(operationArguments, null, Program.EnvironTokenDescriptionKey, out tokenDescription))
+            {
+                Git.Trace.WriteLine($"token description for '{operationArguments.TargetUri}' is " + tokenDescription);
+            }
+
+            return tokenDescription;
         }
     }
 }

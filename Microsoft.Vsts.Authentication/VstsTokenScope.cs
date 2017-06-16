@@ -141,7 +141,7 @@ namespace Microsoft.Alm.Authentication
         /// </summary>
         public static readonly VstsTokenScope WorkWrite = new VstsTokenScope("vso.work_write");
 
-        private VstsTokenScope(string value)
+        public VstsTokenScope(string value)
             : base(value)
         { }
 

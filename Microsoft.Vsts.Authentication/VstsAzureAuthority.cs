@@ -53,7 +53,8 @@ namespace Microsoft.Alm.Authentication
         /// <param name="tokenScope"></param>
         /// <param name="requireCompactToken"></param>
         /// <returns></returns>
-        public async Task<Token> GeneratePersonalAccessToken(TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope, bool requireCompactToken)
+        public async Task<Token> GeneratePersonalAccessToken(
+            TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope, string tokenDescription, bool requireCompactToken)
         {
             BaseSecureStore.ValidateTargetUri(targetUri);
             BaseSecureStore.ValidateToken(accessToken);
@@ -68,7 +69,7 @@ namespace Microsoft.Alm.Authentication
                     {
                         Uri requestUri = await CreatePersonalAccessTokenRequestUri(httpClient, targetUri, requireCompactToken);
 
-                        using (StringContent content = GetAccessTokenRequestBody(targetUri, accessToken, tokenScope))
+                        using (StringContent content = GetAccessTokenRequestBody(targetUri, accessToken, tokenScope, tokenDescription))
                         using (HttpResponseMessage response = await httpClient.PostAsync(requestUri, content))
                         {
                             if (response.IsSuccessStatusCode)
@@ -380,9 +381,14 @@ namespace Microsoft.Alm.Authentication
             return idenitityServiceUri;
         }
 
-        private static StringContent GetAccessTokenRequestBody(TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope)
+        private static StringContent GetAccessTokenRequestBody(TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope, string tokenDescription)
         {
-            const string ContentJsonFormat = "{{ \"scope\" : \"{0}\", \"targetAccounts\" : [\"{1}\"], \"displayName\" : \"Git: {2} on {3}\" }}";
+            if (String.IsNullOrEmpty(tokenDescription))
+            {
+                tokenDescription = "Git: " + targetUri;
+            }
+
+            const string ContentJsonFormat = "{{ \"scope\" : \"{0}\", \"targetAccounts\" : [\"{1}\"], \"displayName\" : \"{2} on {3}\" }}";
             const string HttpJsonContentType = "application/json";
 
             Debug.Assert(accessToken != null && (accessToken.Type == TokenType.Access || accessToken.Type == TokenType.Federated), "The accessToken parameter is null or invalid");
@@ -390,7 +396,7 @@ namespace Microsoft.Alm.Authentication
 
             Git.Trace.WriteLine($"creating access token scoped to '{tokenScope}' for '{accessToken.TargetIdentity}'");
 
-            string jsonContent = String.Format(ContentJsonFormat, tokenScope, accessToken.TargetIdentity, targetUri, Environment.MachineName);
+            string jsonContent = String.Format(ContentJsonFormat, tokenScope, accessToken.TargetIdentity, tokenDescription, Environment.MachineName);
             StringContent content = new StringContent(jsonContent, Encoding.UTF8, HttpJsonContentType);
 
             return content;

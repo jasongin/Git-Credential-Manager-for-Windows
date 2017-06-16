@@ -44,6 +44,7 @@ namespace Microsoft.Alm.Authentication
         /// </para>
         /// </param>
         /// <param name="tokenScope">The scope of all access tokens acquired by the authority.</param>
+        /// <param name="tokenDescription">Description of tokens that may be generated.</param>
         /// <param name="personalAccessTokenStore">
         /// The secure secret store for storing any personal access tokens acquired.
         /// </param>
@@ -53,8 +54,9 @@ namespace Microsoft.Alm.Authentication
         public VstsAadAuthentication(
             Guid tenantId,
             VstsTokenScope tokenScope,
+            string tokenDescription,
             ICredentialStore personalAccessTokenStore)
-            : base(tokenScope, personalAccessTokenStore)
+            : base(tokenScope, tokenDescription, personalAccessTokenStore)
         {
             if (tenantId == Guid.Empty)
             {

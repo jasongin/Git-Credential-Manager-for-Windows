@@ -135,7 +135,12 @@ namespace GitHub.Authentication
         /// </summary>
         public static readonly TokenScope UserFollow = new TokenScope("user:follow");
 
-        private TokenScope(string value)
+        /// <summary>
+        /// Access all user information (read-only)
+        /// </summary>
+        public static readonly TokenScope UserRead = new TokenScope("read:user");
+
+        public TokenScope(string value)
             : base(value)
         { }
 

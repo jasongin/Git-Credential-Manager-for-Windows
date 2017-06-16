@@ -29,6 +29,8 @@ namespace Microsoft.Alm.Cli
         internal static readonly StringComparer ConfigValueComparer = StringComparer.OrdinalIgnoreCase;
 
         internal const string EnvironAuthorityKey = "GCM_AUTHORITY";
+        internal const string EnvironTokenScopeKey = "GCM_TOKEN_SCOPE";
+        internal const string EnvironTokenDescriptionKey = "GCM_TOKEN_DESCRIPTION";
         internal const string EnvironConfigNoLocalKey = "GCM_CONFIG_NOLOCAL";
         internal const string EnvironConfigNoSystemKey = "GCM_CONFIG_NOSYSTEM";
         internal const string EnvironHttpProxyKey = "GCM_HTTP_PROXY";

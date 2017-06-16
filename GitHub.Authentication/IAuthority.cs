@@ -35,7 +35,8 @@ namespace GitHub.Authentication
             string username,
             string password,
             string authenticationCode,
-            TokenScope scope);
+            TokenScope scope,
+            string tokenDescription = null);
 
         Task<bool> ValidateCredentials(TargetUri targetUri, Credential credentials);
     }

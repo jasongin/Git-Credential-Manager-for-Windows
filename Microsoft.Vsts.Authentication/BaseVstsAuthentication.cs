@@ -45,7 +45,10 @@ namespace Microsoft.Alm.Authentication
 
         protected const string AdalRefreshPrefix = "ada";
 
-        protected BaseVstsAuthentication(VstsTokenScope tokenScope, ICredentialStore personalAccessTokenStore)
+        protected BaseVstsAuthentication(
+            VstsTokenScope tokenScope,
+            string tokenDescription,
+            ICredentialStore personalAccessTokenStore)
         {
             if (ReferenceEquals(tokenScope, null))
                 throw new ArgumentNullException(nameof(tokenScope));
@@ -55,6 +58,7 @@ namespace Microsoft.Alm.Authentication
             this.ClientId = DefaultClientId;
             this.Resource = DefaultResource;
             this.TokenScope = tokenScope;
+            this.TokenDescription = tokenDescription;
             this.PersonalAccessTokenStore = personalAccessTokenStore;
             this.VstsAuthority = new VstsAzureAuthority();
         }
@@ -63,7 +67,7 @@ namespace Microsoft.Alm.Authentication
             ICredentialStore personalAccessTokenStore,
             ITokenStore vstsIdeTokenCache,
             IVstsAuthority vstsAuthority)
-            : this(VstsTokenScope.ProfileRead, personalAccessTokenStore)
+            : this(VstsTokenScope.ProfileRead, null, personalAccessTokenStore)
         {
             if (ReferenceEquals(vstsIdeTokenCache, null))
                 throw new ArgumentNullException(nameof(vstsIdeTokenCache));
@@ -89,6 +93,11 @@ namespace Microsoft.Alm.Authentication
         /// The desired scope of the authentication token to be requested.
         /// </summary>
         public readonly VstsTokenScope TokenScope;
+
+        /// <summary>
+        /// Description of the token, which appears on the PAT admin page.
+        /// </summary>
+        public readonly string TokenDescription;
 
         internal readonly TokenCache VstsAdalTokenCache;
         internal readonly ITokenStore VstsIdeTokenCache;
@@ -202,6 +211,7 @@ namespace Microsoft.Alm.Authentication
         /// </summary>
         /// <param name="targetUri">The resource for which authentication is being requested.</param>
         /// <param name="scope">The scope of the access being requested.</param>
+        /// <param name="tokenDescription">Description of tokens that may be generated.</param>
         /// <param name="personalAccessTokenStore">
         /// Storage container for personal access token secrets.
         /// </param>
@@ -216,6 +226,7 @@ namespace Microsoft.Alm.Authentication
         public static async Task<BaseAuthentication> GetAuthentication(
             TargetUri targetUri,
             VstsTokenScope scope,
+            string tokenDescription,
             ICredentialStore personalAccessTokenStore)
         {
             BaseSecureStore.ValidateTargetUri(targetUri);
@@ -238,12 +249,12 @@ namespace Microsoft.Alm.Authentication
             if (tenantId == Guid.Empty)
             {
                 Git.Trace.WriteLine("MSA authority detected.");
-                authentication = new VstsMsaAuthentication(scope, personalAccessTokenStore);
+                authentication = new VstsMsaAuthentication(scope, tokenDescription, personalAccessTokenStore);
             }
             else
             {
                 Git.Trace.WriteLine($"AAD authority for tenant '{tenantId}' detected.");
-                authentication = new VstsAadAuthentication(tenantId, scope, personalAccessTokenStore);
+                authentication = new VstsAadAuthentication(tenantId, scope, tokenDescription, personalAccessTokenStore);
                 (authentication as VstsAadAuthentication).TenantId = tenantId;
             }
 
@@ -309,7 +320,8 @@ namespace Microsoft.Alm.Authentication
             Credential credential = null;
 
             Token personalAccessToken;
-            if ((personalAccessToken = await this.VstsAuthority.GeneratePersonalAccessToken(targetUri, accessToken, TokenScope, requestCompactToken)) != null)
+            if ((personalAccessToken = await this.VstsAuthority.GeneratePersonalAccessToken(
+                targetUri, accessToken, TokenScope, TokenDescription, requestCompactToken)) != null)
             {
                 credential = (Credential)personalAccessToken;
 

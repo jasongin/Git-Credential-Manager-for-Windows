@@ -13,7 +13,8 @@ namespace Microsoft.Alm.Authentication.Test
 
         internal readonly string ExpectedQueryParameters;
 
-        public async Task<Token> GeneratePersonalAccessToken(TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope, bool requireCompactToken)
+        public async Task<Token> GeneratePersonalAccessToken(
+            TargetUri targetUri, Token accessToken, VstsTokenScope tokenScope, string tokenDescription, bool requireCompactToken)
         {
             return await Task.Run(() => { return new Token("personal-access-token", TokenType.Personal); });
         }

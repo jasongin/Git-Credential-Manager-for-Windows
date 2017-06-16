@@ -71,7 +71,8 @@ namespace GitHub.Authentication
             string username,
             string password,
             string authenticationCode,
-            TokenScope scope)
+            TokenScope scope,
+            string tokenDescription = null)
         {
             const string GitHubOptHeader = "X-GitHub-OTP";
 
@@ -97,8 +98,13 @@ namespace GitHub.Authentication
                     httpClient.DefaultRequestHeaders.Add(GitHubOptHeader, authenticationCode);
                 }
 
+                if (String.IsNullOrEmpty(tokenDescription))
+                {
+                    tokenDescription = "git: " + targetUri;
+                }
+
                 const string HttpJsonContentType = "application/x-www-form-urlencoded";
-                const string JsonContentFormat = @"{{ ""scopes"": {0}, ""note"": ""git: {1} on {2} at {3:dd-MMM-yyyy HH:mm}"" }}";
+                const string JsonContentFormat = @"{{ ""scopes"": {0}, ""note"": ""{1} on {2} at {3:dd-MMM-yyyy HH:mm}"" }}";
 
                 StringBuilder scopesBuilder = new StringBuilder();
                 scopesBuilder.Append('[');
@@ -119,7 +125,7 @@ namespace GitHub.Authentication
 
                 scopesBuilder.Append(']');
 
-                string jsonContent = String.Format(JsonContentFormat, scopesBuilder, targetUri, Environment.MachineName, DateTime.Now);
+                string jsonContent = String.Format(JsonContentFormat, scopesBuilder, tokenDescription, Environment.MachineName, DateTime.Now);
 
                 using (StringContent content = new StringContent(jsonContent, Encoding.UTF8, HttpJsonContentType))
                 using (HttpResponseMessage response = await httpClient.PostAsync(_authorityUrl, content))
