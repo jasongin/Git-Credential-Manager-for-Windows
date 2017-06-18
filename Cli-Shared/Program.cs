@@ -330,7 +330,7 @@ namespace Microsoft.Alm.Cli
 
         private void PrintVersion()
         {
-            WriteLine($"{Title} version {Version.ToString(3)}");
+            WriteLine($"{Title} version {Version.ToString(3)}-jasongin");
         }
 
         private bool StandardHandleIsTty(NativeMethods.StandardHandleType handleType)
